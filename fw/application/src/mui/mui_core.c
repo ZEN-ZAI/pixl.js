@@ -4,6 +4,13 @@
 #include "mui_u8g2.h"
 #include "nrf_log.h"
 #include "settings.h"
+#include "utils2.h"
+
+// hold center for 1s (long) + 10 x 200ms (repeat) = 3s, then release to sleep
+#define SLEEP_HOLD_REPEAT_COUNT 10
+
+static uint8_t m_sleep_hold_repeats = 0;
+static bool m_sleep_armed = false;
 
 static mui_view_port_t *mui_find_view_port_enabled(mui_t *p_mui, mui_layer_t layer) {
     mui_view_port_array_it_t it;
@@ -85,7 +92,51 @@ static void mui_process_redraw(mui_t *p_mui, mui_event_t *p_event) {
     }
 }
 
+// returns true if the event is consumed by the sleep shortcut
+static bool mui_process_sleep_shortcut(mui_t *p_mui, mui_event_t *p_event) {
+    uint32_t arg = p_event->arg_int;
+    input_key_t key = arg & 0xFF;
+    input_type_t type = (arg >> 8) & 0xFF;
+
+    if (key != INPUT_KEY_CENTER) {
+        return false;
+    }
+
+    switch (type) {
+    case INPUT_TYPE_PRESS:
+        m_sleep_hold_repeats = 0;
+        m_sleep_armed = false;
+        break;
+
+    case INPUT_TYPE_REPEAT:
+        if (!m_sleep_armed && ++m_sleep_hold_repeats >= SLEEP_HOLD_REPEAT_COUNT) {
+            // blank the screen so the user knows to release
+            m_sleep_armed = true;
+            p_mui->auto_update = 0;
+            mui_canvas_clear(&p_mui->canvas);
+            mui_canvas_flush(&p_mui->canvas);
+        }
+        break;
+
+    case INPUT_TYPE_RELEASE:
+        // center is the wakeup button, so sleep only after it is released
+        if (m_sleep_armed) {
+            go_sleep();
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return m_sleep_armed;
+}
+
 static void mui_process_input(mui_t *p_mui, mui_event_t *p_event) {
+    if (mui_process_sleep_shortcut(p_mui, p_event)) {
+        return;
+    }
+
     mui_view_port_t *p_view_port = mui_find_view_port_enabled(p_mui, MUI_LAYER_FULLSCREEN);
     if (!p_view_port) {
         p_view_port = mui_find_view_port_enabled(p_mui, MUI_LAYER_WINDOW);
