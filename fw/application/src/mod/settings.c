@@ -9,12 +9,9 @@
 
 #define SETTINGS_FILE_NAME "/settings.bin"
 
-#ifdef OLED_SCREEN
-// Though OLED doesn't necessarily imply rechargeable battery, it's usually the case.
+// Allmiibo (LCD) runs on a LiPo battery with the voltage divider and charge pin wired,
+// and OLED boards usually do too.
 #define DEFAULT_BAT_MODE 1
-#else // !OLED_SCREEN
-#define DEFAULT_BAT_MODE 0
-#endif // OLED_SCREEN
 
 const settings_data_t def_settings_data = {.backlight = 0,
                                            .auto_gen_amiibo = 0,
