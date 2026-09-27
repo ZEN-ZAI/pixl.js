@@ -8,9 +8,12 @@ import platform
 
 # Absolute path to the directories containing the .c files
 current_dir = os.path.dirname(os.path.abspath(__file__))
+# English-only build: glyphs for the English strings and the amiibo database
 source_dirs = [
-    os.path.join(current_dir, "../application/src/i18n"),
     os.path.join(current_dir, "../application/src/amiidb"),
+]
+source_files = [
+    os.path.join(current_dir, "../application/src/i18n/en_US.c"),
 ]
 
 # Absolute path to the directory where the output file will be saved
@@ -28,13 +31,13 @@ def write_to_file(file_path, content):
 
 def extract_non_printable_chars():
     non_printable_chars = set()
+    paths = list(source_files)
     for source_dir in source_dirs:
         for root, _, files in os.walk(source_dir):
-            for file in files:
-                if file.endswith(".c"):
-                    with open(os.path.join(root, file), "r", encoding="utf-8") as f:
-                        content = f.read()
-                        non_printable_chars.update(re.findall(r"[^\x20-\x7E]", content))
+            paths += [os.path.join(root, file) for file in files if file.endswith(".c")]
+    for path in paths:
+        with open(path, "r", encoding="utf-8") as f:
+            non_printable_chars.update(re.findall(r"[^\x20-\x7E]", f.read()))
 
     write_to_file(
         os.path.join(data_dir, output_file), "\n".join(sorted(non_printable_chars))
@@ -85,13 +88,14 @@ def main():
     extract_non_printable_chars()
 
     combined_content = ""
-    for file_name in ["chinese3.txt", "pixjs.txt"]:
+    for file_name in ["pixjs.txt"]:
         with open(os.path.join(data_dir, file_name), "r", encoding="utf-8") as file:
             combined_content += file.read()
 
     sorted_converted = convert_and_sort(combined_content.splitlines())
     write_to_file(
-        os.path.join(data_dir, "gb2312a.map"), "32-128,\n" + "\n".join(sorted_converted)
+        # ASCII + Latin-1 (accented file names), no CJK
+        os.path.join(data_dir, "gb2312a.map"), "32-128,\n160-255,\n" + "\n".join(sorted_converted)
     )
 
     run_bdfconv(
