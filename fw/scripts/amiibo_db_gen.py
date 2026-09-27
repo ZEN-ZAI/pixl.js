@@ -5,6 +5,7 @@ from urllib.request import urlopen
 import json
 import os
 import csv
+import sys
 
 class Amiibo:
     def __init__(self):
@@ -101,10 +102,9 @@ def gen_amiibo_data_c_file(amiibos):
         f.write('#include "db_header.h"\n')
         f.write('const db_amiibo_t amiibo_list[] = {\n')
         for amiibo in amiibos:
-            f.write('{0x%s, 0x%s, "%s", "%s"}, \n' % 
-                    (amiibo.id[0:8], amiibo.id[8:16], amiibo.name_en, 
-             amiibo.name_cn)) 
-        f.write("{0, 0, 0, 0}\n")
+            f.write('{0x%s, 0x%s, "%s"}, \n' % 
+                    (amiibo.id[0:8], amiibo.id[8:16], amiibo.name_en)) 
+        f.write("{0, 0, 0}\n")
         f.write("};\n")
         f.write("// Subsctracting one because of the end-marker entry {0,0,0,0} at the end.\n")
         f.write("const size_t amiibo_list_size = sizeof(amiibo_list) / sizeof(db_amiibo_t) - 1;\n")
@@ -164,10 +164,9 @@ def gen_amiibo_link_c_file(links):
         f.write('#include "db_header.h"\n')
         f.write('const db_link_t link_list[] = {\n')
         for link in links:
-            f.write('{%s, 0x%s, 0x%s, "%s", "%s", "%s"}, \n' % 
-                    (link.game_id, link.amiibo_id[0:8], link.amiibo_id[8:16], link.note_en, 
-             link.note_cn, link.note_it))  
-        f.write("{0, 0, 0, 0, 0, 0}\n")
+            f.write('{%s, 0x%s, 0x%s, "%s"}, \n' % 
+                    (link.game_id, link.amiibo_id[0:8], link.amiibo_id[8:16], link.note_en))  
+        f.write("{0, 0, 0, 0}\n")
         f.write("};\n")
 
 def gen_amiibo_game_c_file(games, links):
@@ -177,10 +176,10 @@ def gen_amiibo_game_c_file(games, links):
         f.write('#include "db_header.h"\n')
         f.write('const db_game_t game_list[] = {\n')
         for game in games:
-            f.write('{%s, %s, "%s", "%s", %s, %s}, \n' % 
+            f.write('{%s, %s, "%s", %s, %s}, \n' % 
                     (game.id, game.parent_id, game.name_en, 
-             game.name_cn, game.order, count_game_links( games, links, game.id)))
-        f.write("{0, 0, 0, 0, 0}\n")
+             game.order, count_game_links( games, links, game.id)))
+        f.write("{0, 0, 0, 0}\n")
         f.write("};\n")
 
 def gen_other_link(amiibos, links):
@@ -205,7 +204,8 @@ def gen_other_link(amiibos, links):
     return links
 
 
-amiibos_api = fetch_amiibo_from_api()
+# --offline: regenerate from the CSV files only, without fetching new amiibo
+amiibos_api = list() if "--offline" in sys.argv else fetch_amiibo_from_api()
 amiibos_csv = read_amiibo_from_csv()
 amiibos_merged = merge_amiibo(amiibos_csv, amiibos_api)
 write_amiibo_to_csv(amiibos_merged)

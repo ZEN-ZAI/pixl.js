@@ -66,7 +66,6 @@ static int amiidb_scene_game_list_list_view_sort_cb(const mui_list_item_t *p_ite
 }
 
 static void amiidb_scene_game_list_reload(app_amiidb_t *app) {
-    settings_data_t *p_settings_data = settings_get_data();
     char txt[64];
 
     // clear list view
@@ -77,7 +76,7 @@ static void amiidb_scene_game_list_reload(app_amiidb_t *app) {
     const db_game_t *p_game = game_list;
     while (p_game->game_id > 0) {
         if (p_game->parent_game_id == cur_game_id) {
-            sprintf(txt, "%s (%d)", (p_settings_data->language == LANGUAGE_ZH_HANS ? p_game->name_cn : p_game->name_en),
+            sprintf(txt, "%s (%d)", p_game->name_en,
                     p_game->link_cnt);
             mui_list_view_add_item(app->p_list_view, ICON_FOLDER, txt, (void *)p_game);
         }

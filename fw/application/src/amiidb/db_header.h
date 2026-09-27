@@ -9,7 +9,6 @@ typedef struct {
     uint32_t head;
     uint32_t tail;
     const char *name_en;
-    const char *name_cn;
 
 } db_amiibo_t;
 
@@ -19,7 +18,6 @@ typedef struct _db_game_t {
     uint8_t game_id;
     uint8_t parent_game_id;
     const char *name_en;
-    const char *name_cn;
     
     uint8_t order;
     uint16_t link_cnt;
@@ -30,8 +28,6 @@ typedef struct _db_link_t {
     uint32_t head;
     uint32_t tail;
     const char *note_en;
-    const char *note_cn;
-    const char *note_it;
     
 } db_link_t;
 
